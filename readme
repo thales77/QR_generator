@@ -1,6 +1,6 @@
 # QR Code Generator for PDF Files
 
-This script automatically generates QR codes for PDF files located in a specified folder. The QR codes link to URLs constructed using a base URL, an ISBN number provided by the user, and parameters extracted from the PDF filenames.
+This script automatically generates QR codes for PDF files located in a specified folder and zips them into a single ZIP file placed inside the `qr` directory. The individual QR code image files are removed after zipping, so only the ZIP file remains.
 
 ## Table of Contents
 
@@ -19,13 +19,15 @@ This script automatically generates QR codes for PDF files located in a specifie
 
 ## Overview
 
-The script automates the generation of QR codes for each PDF file in a `/pdf` folder. It prompts the user to input an ISBN number and constructs URLs based on the filenames of the PDF files. Each QR code image corresponds to a URL that includes the ISBN and content extracted from the PDF filename.
+The script automates the generation of QR codes for each PDF file in a `/pdf` folder. It prompts the user to input an ISBN number and constructs URLs based on the filenames of the PDF files. Each QR code corresponds to a URL that includes the ISBN and content extracted from the PDF filename. After generating the QR codes, the script zips all the QR code images into a single ZIP file named `qr_codes.zip` inside the `qr` directory and removes the individual QR code image files.
 
 ## Features
 
-- **Automated URL Generation**: Constructs URLs based on PDF filenames and user-provided ISBN.
+- **Automated URL Generation**: Constructs URLs based on PDF filenames and a user-provided ISBN.
 - **Batch QR Code Generation**: Processes all PDF files in the specified folder.
-- **Customizable Output**: QR code images are saved with filenames based on the PDF filenames.
+- **ZIP Archiving**: All generated QR code images are zipped into a single ZIP file placed in the `qr` directory.
+- **Clean Output Directory**: Individual QR code images are removed after zipping, leaving only the ZIP file.
+- **Customizable Output**: QR code images are named based on the PDF filenames before zipping.
 - **User-Friendly**: Simple prompts and clear output messages.
 
 ## Prerequisites
@@ -86,60 +88,92 @@ The script automates the generation of QR codes for each PDF file in a `/pdf` fo
 4. **Result**:
 
    - The script will generate QR codes for each PDF file in the `pdf` folder.
-   - QR code images are saved in the `qr` folder (created automatically).
-   - Each image is named based on the `contenuto` extracted from the PDF filename, for example: `237-VoORGLINFQR5.png`.
+   - QR code images are temporarily saved in the `qr` folder.
+   - All QR codes are zipped into a single file named `qr_codes.zip` located inside the `qr` folder.
+   - Individual QR code image files are deleted after zipping, leaving only the ZIP file in the `qr` directory.
+   - Each QR code image (before deletion) is named based on the `contenuto` extracted from the PDF filename, for example: `237-VoORGLINFQR5.png`.
 
 5. **Confirmation Messages**:
 
-   - The script will print a confirmation message for each QR code generated:
+   - The script will print a confirmation message for each QR code generated and when the ZIP file is created and individual images are removed:
 
      ```
      QR code generated for https://contenuti.edises.it/?isbn=9788836231881&contenuto=237-VoORGLINFQR5&tipo=pdf and saved as qr/237-VoORGLINFQR5.png
+     ...
+     All QR codes have been zipped into qr/qr_codes.zip and individual QR code images have been removed.
      ```
 
 ## Script Details
 
 Here is a brief explanation of how the script works:
 
-```python
-import os
-import qrcode
+- **Import Necessary Modules**:
 
-def generate_qr_codes(pdf_folder, isbn, box_size=10, border=4, quality=qrcode.constants.ERROR_CORRECT_L):
-    # List all PDF files in the specified folder
-    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
-    
-    # Create output directory for QR codes
-    output_folder = 'qr'
-    os.makedirs(output_folder, exist_ok=True)
-    
-    # Iterate through each PDF file
-    for pdf_file in pdf_files:
-        # Extract 'contenuto' from the filename (without the '.pdf' extension)
-        contenuto = os.path.splitext(pdf_file)[0]
-        
-        # Build the URL
-        url = f"https://contenuti.edises.it/?isbn={isbn}&contenuto={contenuto}&tipo=pdf"
-        
-        # Generate QR code
-        qr = qrcode.QRCode(version=1, error_correction=quality, box_size=box_size, border=border)
-        qr.add_data(url)
-        qr.make(fit=True)
-        
-        # Create an image from the QR Code instance
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Save the image with a name based on the 'contenuto'
-        qr_filename = os.path.join(output_folder, f"{contenuto}.png")
-        img.save(qr_filename)
-        
-        print(f"QR code generated for {url} and saved as {qr_filename}")
+  ```python
+  import os
+  import qrcode
+  import zipfile
+  ```
 
-if __name__ == "__main__":
-    isbn = input("Please enter the ISBN number: ")
-    pdf_folder = 'pdf'  # Ensure this folder exists and contains your PDF files
-    generate_qr_codes(pdf_folder, isbn)
-```
+- **Define the Main Function**:
+
+  ```python
+  def generate_qr_codes(pdf_folder, isbn, box_size=10, border=4, quality=qrcode.constants.ERROR_CORRECT_L):
+      # List all PDF files in the specified folder
+      pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+
+      # Create output directory for QR codes
+      output_folder = 'qr'
+      os.makedirs(output_folder, exist_ok=True)
+
+      # List to keep track of QR code filenames
+      qr_filenames = []
+
+      # Iterate through each PDF file
+      for pdf_file in pdf_files:
+          # Extract 'contenuto' from the filename (without the '.pdf' extension)
+          contenuto = os.path.splitext(pdf_file)[0]
+
+          # Build the URL
+          url = f"https://contenuti.edises.it/?isbn={isbn}&contenuto={contenuto}&tipo=pdf"
+
+          # Generate QR code
+          qr = qrcode.QRCode(version=1, error_correction=quality, box_size=box_size, border=border)
+          qr.add_data(url)
+          qr.make(fit=True)
+
+          # Create an image from the QR Code instance
+          img = qr.make_image(fill_color="black", back_color="white")
+
+          # Save the image with a name based on the 'contenuto'
+          qr_filename = os.path.join(output_folder, f"{contenuto}.png")
+          img.save(qr_filename)
+          qr_filenames.append(qr_filename)
+
+          print(f"QR code generated for {url} and saved as {qr_filename}")
+
+      # Zip all the QR code images into a single zip file within the 'qr' directory
+      zip_filename = os.path.join(output_folder, 'qr_codes.zip')
+      with zipfile.ZipFile(zip_filename, 'w') as qr_zip:
+          for qr_file in qr_filenames:
+              # Add the QR code image to the ZIP file
+              qr_zip.write(qr_file, arcname=os.path.basename(qr_file))
+
+      # Remove the individual QR code image files, leaving only the ZIP file
+      for qr_file in qr_filenames:
+          os.remove(qr_file)
+
+      print(f"All QR codes have been zipped into {zip_filename} and individual QR code images have been removed.")
+  ```
+
+- **Execute the Script**:
+
+  ```python
+  if __name__ == "__main__":
+      isbn = input("Please enter the ISBN number: ")
+      pdf_folder = 'pdf'  # Ensure this folder exists and contains your PDF files
+      generate_qr_codes(pdf_folder, isbn)
+  ```
 
 ### Key Functions:
 
@@ -167,6 +201,26 @@ if __name__ == "__main__":
 
   - Generates a QR code for each URL.
   - Saves the QR code image in the `qr` folder.
+  - Keeps track of QR code filenames in a list for later use.
+
+- **Zip the QR Codes**:
+
+  - After all QR codes are generated, the script zips all the QR code images into `qr_codes.zip` inside the `qr` directory.
+
+    ```python
+    with zipfile.ZipFile(zip_filename, 'w') as qr_zip:
+        for qr_file in qr_filenames:
+            qr_zip.write(qr_file, arcname=os.path.basename(qr_file))
+    ```
+
+- **Remove Individual QR Code Images**:
+
+  - Deletes the individual QR code image files, leaving only the ZIP file in the `qr` directory.
+
+    ```python
+    for qr_file in qr_filenames:
+        os.remove(qr_file)
+    ```
 
 ## Customization
 
@@ -186,17 +240,33 @@ You can customize the script to suit your needs:
 
 - **Change Output Folder**:
 
-  - Update the `output_folder` variable to save QR codes in a different directory.
+  - Update the `output_folder` variable to save QR codes and the ZIP file in a different directory.
+
+- **Change ZIP Filename**:
+
+  - Modify the `zip_filename` variable to change the name of the output ZIP file.
+
+    ```python
+    zip_filename = os.path.join(output_folder, 'my_custom_qr_codes.zip')
+    ```
 
 - **Filter PDF Files**:
 
   - Add conditions to filter specific PDF files based on naming conventions or patterns.
 
+- **Keep Individual QR Code Images**:
+
+  - If you want to retain the individual QR code images, comment out or remove the code that deletes them:
+
+    ```python
+    # Remove the individual QR code image files, leaving only the ZIP file
+    # for qr_file in qr_filenames:
+    #     os.remove(qr_file)
+    ```
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
 
 ## Support
 
