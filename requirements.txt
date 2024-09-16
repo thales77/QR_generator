@@ -6,6 +6,7 @@ lxml==5.1.0
 numpy==1.26.4
 packaging==23.2
 pandas==2.2.0
+zipfile===3.2
 pikepdf==8.11.2
 pillow==10.2.0
 pyarrow==15.0.0

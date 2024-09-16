@@ -1,0 +1,207 @@
+# QR Code Generator for PDF Files
+
+This script automatically generates QR codes for PDF files located in a specified folder. The QR codes link to URLs constructed using a base URL, an ISBN number provided by the user, and parameters extracted from the PDF filenames.
+
+## Table of Contents
+
+- [QR Code Generator for PDF Files](#qr-code-generator-for-pdf-files)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Features](#features)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Script Details](#script-details)
+    - [Key Functions:](#key-functions)
+  - [Customization](#customization)
+  - [License](#license)
+  - [Support](#support)
+
+## Overview
+
+The script automates the generation of QR codes for each PDF file in a `/pdf` folder. It prompts the user to input an ISBN number and constructs URLs based on the filenames of the PDF files. Each QR code image corresponds to a URL that includes the ISBN and content extracted from the PDF filename.
+
+## Features
+
+- **Automated URL Generation**: Constructs URLs based on PDF filenames and user-provided ISBN.
+- **Batch QR Code Generation**: Processes all PDF files in the specified folder.
+- **Customizable Output**: QR code images are saved with filenames based on the PDF filenames.
+- **User-Friendly**: Simple prompts and clear output messages.
+
+## Prerequisites
+
+- **Python 3.x**
+- **Required Python Packages**:
+  - `qrcode`
+  - `Pillow` (PIL is used by the `qrcode` library for image generation)
+
+## Installation
+
+1. **Clone or Download the Repository**:
+
+   ```bash
+   git clone https://github.com/yourusername/qrcode-generator.git
+   ```
+
+   Or download the ZIP file and extract it.
+
+2. **Navigate to the Project Directory**:
+
+   ```bash
+   cd qrcode-generator
+   ```
+
+3. **Install Required Packages**:
+
+   Install the required Python packages using `pip`:
+
+   ```bash
+   pip install qrcode[pil]
+   ```
+
+## Usage
+
+1. **Prepare the PDF Folder**:
+
+   - Ensure there is a folder named `pdf` in the project directory.
+   - Place all your PDF files in the `pdf` folder.
+   - **Note**: The filenames should represent the `contenuto` parameter, for example: `237-VoORGLINFQR5.pdf`.
+
+2. **Run the Script**:
+
+   Execute the script in your Python environment:
+
+   ```bash
+   python generate_qr_codes.py
+   ```
+
+3. **Enter the ISBN Number**:
+
+   - When prompted, input the ISBN number. For example:
+
+     ```
+     Please enter the ISBN number: 9788836231881
+     ```
+
+4. **Result**:
+
+   - The script will generate QR codes for each PDF file in the `pdf` folder.
+   - QR code images are saved in the `qr` folder (created automatically).
+   - Each image is named based on the `contenuto` extracted from the PDF filename, for example: `237-VoORGLINFQR5.png`.
+
+5. **Confirmation Messages**:
+
+   - The script will print a confirmation message for each QR code generated:
+
+     ```
+     QR code generated for https://contenuti.edises.it/?isbn=9788836231881&contenuto=237-VoORGLINFQR5&tipo=pdf and saved as qr/237-VoORGLINFQR5.png
+     ```
+
+## Script Details
+
+Here is a brief explanation of how the script works:
+
+```python
+import os
+import qrcode
+
+def generate_qr_codes(pdf_folder, isbn, box_size=10, border=4, quality=qrcode.constants.ERROR_CORRECT_L):
+    # List all PDF files in the specified folder
+    pdf_files = [f for f in os.listdir(pdf_folder) if f.endswith('.pdf')]
+    
+    # Create output directory for QR codes
+    output_folder = 'qr'
+    os.makedirs(output_folder, exist_ok=True)
+    
+    # Iterate through each PDF file
+    for pdf_file in pdf_files:
+        # Extract 'contenuto' from the filename (without the '.pdf' extension)
+        contenuto = os.path.splitext(pdf_file)[0]
+        
+        # Build the URL
+        url = f"https://contenuti.edises.it/?isbn={isbn}&contenuto={contenuto}&tipo=pdf"
+        
+        # Generate QR code
+        qr = qrcode.QRCode(version=1, error_correction=quality, box_size=box_size, border=border)
+        qr.add_data(url)
+        qr.make(fit=True)
+        
+        # Create an image from the QR Code instance
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Save the image with a name based on the 'contenuto'
+        qr_filename = os.path.join(output_folder, f"{contenuto}.png")
+        img.save(qr_filename)
+        
+        print(f"QR code generated for {url} and saved as {qr_filename}")
+
+if __name__ == "__main__":
+    isbn = input("Please enter the ISBN number: ")
+    pdf_folder = 'pdf'  # Ensure this folder exists and contains your PDF files
+    generate_qr_codes(pdf_folder, isbn)
+```
+
+### Key Functions:
+
+- **Prompt for ISBN**:
+
+  - Uses `input()` to get the ISBN number from the user.
+
+- **List PDF Files**:
+
+  - Scans the specified folder for files ending with `.pdf`.
+
+- **Extract 'contenuto'**:
+
+  - Extracts the filename without the extension to use as the `contenuto` parameter in the URL.
+
+- **Construct URL**:
+
+  - Builds the URL using the base URL, ISBN, and `contenuto`:
+
+    ```python
+    url = f"https://contenuti.edises.it/?isbn={isbn}&contenuto={contenuto}&tipo=pdf"
+    ```
+
+- **Generate and Save QR Codes**:
+
+  - Generates a QR code for each URL.
+  - Saves the QR code image in the `qr` folder.
+
+## Customization
+
+You can customize the script to suit your needs:
+
+- **Change the Base URL**:
+
+  - Modify the `url` construction line if your base URL is different:
+
+    ```python
+    url = f"https://yourbaseurl.com/?isbn={isbn}&contenuto={contenuto}&tipo=pdf"
+    ```
+
+- **Adjust QR Code Parameters**:
+
+  - Modify `box_size`, `border`, and `quality` parameters in the `generate_qr_codes` function.
+
+- **Change Output Folder**:
+
+  - Update the `output_folder` variable to save QR codes in a different directory.
+
+- **Filter PDF Files**:
+
+  - Add conditions to filter specific PDF files based on naming conventions or patterns.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Support
+
+If you encounter any issues or have questions, please open an issue in the repository or contact the maintainer.
+
+---
+
+**Note**: Ensure that you have the necessary permissions to access and use the PDF files and that generating QR codes linking to the constructed URLs complies with any applicable terms and conditions.
